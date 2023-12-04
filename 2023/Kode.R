@@ -1,12 +1,16 @@
 library(stringi)
 library(tidyverse)
+
+###### 1. December
+
+#### Del 1
 data = read.csv("input.txt",header=FALSE) %>% pull()
 
 first = stringi::stri_extract_first_regex(data, "[0-9]")
 last = stringi::stri_extract_last_regex(data, "[0-9]") 
 total = paste0(first,last) %>% as.numeric() %>% sum()
 
-
+#### Del 2. FML
 
 numbers_verb = c("one", "two", "three", "four", "five", "six", "seven", "eight", "nine")
 numbers_num = 1:9
