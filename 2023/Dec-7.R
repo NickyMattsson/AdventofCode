@@ -1,0 +1,276 @@
+library(stringi)
+library(tidyverse)
+
+###### 7. December
+#Hjælpe funktion
+
+strSort <- function(x) {
+  return(paste(sort(unlist(strsplit(x, ""))), collapse = ""))
+}
+
+#### Del 1
+# data
+data = read.csv("input7.txt",header=FALSE,sep = " ")
+
+#definer hænder
+five = c("([A-Z\\d])\\1\\1\\1\\1")
+four = c("([A-Z\\d])\\1\\1\\1")
+house = c("([A-Z\\d])\\1\\1([A-Z\\d])\\2","([A-Z\\d])\\1([A-Z\\d])\\2\\2")
+three = c("([A-Z\\d])\\1\\1")
+two_pair =c("([A-Z\\d])\\1([A-Z\\d])\\2","([A-Z\\d])\\1\\S([A-Z\\d])\\2")
+two = c("([A-Z\\d])\\1")
+
+udfald = list(five,four,house,three,two_pair,two)
+n_udfald = length(udfald)
+
+# Init
+hands = data$V1%>% 
+  sapply(strSort)
+
+hands_sorted = data.frame(hands_org = data$V1, bets = data$V2, hands = hands,order_prim=n_udfald+1, order_sec = 1)
+
+# Go through hands
+for (i in 1:n_udfald){
+  for (j in 1:length(udfald[[i]])){
+    #Find hænder
+    hand_identified = hands %>% str_detect(udfald[[i]][j]) %>% unlist()
+    #angiv sortering
+    hands_sorted$order_prim[hand_identified] = i
+    #Fjern fra liste
+    hands[hand_identified] = NA
+  }
+}
+
+
+
+result = hands_sorted %>% 
+  mutate(Card1 = 
+           case_when(
+             substring(text = hands_org,first = 1,last = 1)=="A" ~ 14,
+             substring(text = hands_org,first = 1,last = 1)=="K" ~ 13,
+             substring(text = hands_org,first = 1,last = 1)=="Q" ~ 12,
+             substring(text = hands_org,first = 1,last = 1)=="J" ~ 11,
+             substring(text = hands_org,first = 1,last = 1)=="T" ~ 10,
+             TRUE ~ substring(text = hands_org,first = 1,last = 1) %>% as.numeric(),
+           ),
+         Card2 = 
+           case_when(
+             substring(text = hands_org,first = 2,last = 2)=="A" ~ 14,
+             substring(text = hands_org,first = 2,last = 2)=="K" ~ 13,
+             substring(text = hands_org,first = 2,last = 2)=="Q" ~ 12,
+             substring(text = hands_org,first = 2,last = 2)=="J" ~ 11,
+             substring(text = hands_org,first = 2,last = 2)=="T" ~ 10,
+             TRUE ~ substring(text = hands_org,first = 2,last = 2)%>% as.numeric()
+           ),
+         Card3 = 
+           case_when(
+             substring(text = hands_org,first = 3,last = 3)=="A" ~ 14,
+             substring(text = hands_org,first = 3,last = 3)=="K" ~ 13,
+             substring(text = hands_org,first = 3,last = 3)=="Q" ~ 12,
+             substring(text = hands_org,first = 3,last = 3)=="J" ~ 11,
+             substring(text = hands_org,first = 3,last = 3)=="T" ~ 10,
+             TRUE ~ substring(text = hands_org,first = 3,last = 3)%>% as.numeric()
+           ),
+         Card4 = 
+           case_when(
+             substring(text = hands_org,first = 4,last = 4)=="A" ~ 14,
+             substring(text = hands_org,first = 4,last = 4)=="K" ~ 13,
+             substring(text = hands_org,first = 4,last = 4)=="Q" ~ 12,
+             substring(text = hands_org,first = 4,last = 4)=="J" ~ 11,
+             substring(text = hands_org,first = 4,last = 4)=="T" ~ 10,
+             TRUE ~ substring(text = hands_org,first = 4,last = 4)%>% as.numeric()
+           ),
+         Card5 = 
+           case_when(
+             substring(text = hands_org,first = 5,last = 5)=="A" ~ 14,
+             substring(text = hands_org,first = 5,last = 5)=="K" ~ 13,
+             substring(text = hands_org,first = 5,last = 5)=="Q" ~ 12,
+             substring(text = hands_org,first = 5,last = 5)=="J" ~ 11,
+             substring(text = hands_org,first = 5,last = 5)=="T" ~ 10,
+             TRUE ~ substring(text = hands_org,first = 5,last = 5)%>% as.numeric()
+           ),
+         value = -(Card1*(15^4) + Card2*(15^3) + Card3*(15^2) + Card4*(15^1) + Card5)
+         ) %>% 
+  arrange(order_prim,-Card1,-Card2,-Card3,-Card4,-Card5) %>%
+  mutate(rank = seq(n(),1,by=-1),
+         payoff = bets * rank) %>% 
+  pull(payoff) %>% 
+  sum()
+
+
+
+#### Del 2
+# data
+data = read.csv("input7.txt",header=FALSE,sep = " ")
+
+#definer hænder
+five = c("([A-Z\\d])\\1\\1\\1\\1")
+four = c("([A-Z\\d])\\1\\1\\1")
+house = c("([A-Z\\d])\\1\\1([A-Z\\d])\\2","([A-Z\\d])\\1([A-Z\\d])\\2\\2")
+three = c("([A-Z\\d])\\1\\1")
+two_pair =c("([A-Z\\d])\\1([A-Z\\d])\\2","([A-Z\\d])\\1\\S([A-Z\\d])\\2")
+two = c("([A-Z\\d])\\1")
+
+udfald = list(five,four,house,three,two_pair,two)
+n_udfald = length(udfald)
+
+# Init
+hands = data$V1%>% 
+  sapply(strSort)
+
+hands_sorted = data.frame(hands_org = data$V1, bets = data$V2, hands = hands,order_prim=n_udfald+1, order_sec = 1)
+
+hands_sorted$hands = gsub(hands_sorted$hands,pattern="J",replacement = "")
+hands=hands_sorted$hands
+
+# Go through hands
+# 5 of kind
+hand_identified = hands %>% str_detect(five) %>% unlist()
+hands_sorted$order_prim[hand_identified] = 1
+hands[hand_identified] = NA
+
+hand_identified = hands %>% str_detect(four) %>% unlist() & 
+  sapply(hands,nchar)==4
+hands_sorted$order_prim[hand_identified] = 1
+hands[hand_identified] = NA
+
+hand_identified = hands %>% str_detect(three) %>% unlist() & 
+  sapply(hands,nchar)==3
+hands_sorted$order_prim[hand_identified] = 1
+hands[hand_identified] = NA
+
+hand_identified = hands %>% str_detect(two) %>% unlist() & 
+  sapply(hands,nchar)==2
+hands_sorted$order_prim[hand_identified] = 1
+hands[hand_identified] = NA
+
+hand_identified = sapply(hands,nchar)<2
+hands_sorted$order_prim[hand_identified] = 1
+hands[hand_identified] = NA
+
+# 4 of kind
+hand_identified = hands %>% str_detect(four) %>% unlist()
+hands_sorted$order_prim[hand_identified] = 2
+hands[hand_identified] = NA
+
+hand_identified = hands %>% str_detect(three) %>% unlist() & 
+  sapply(hands,nchar)==4
+hands_sorted$order_prim[hand_identified] = 2
+hands[hand_identified] = NA
+
+hand_identified = hands %>% str_detect(two) %>% unlist() &
+  sapply(hands,nchar)==3
+hands_sorted$order_prim[hand_identified] = 2
+hands[hand_identified] = NA
+
+hand_identified = sapply(hands,nchar)==2
+hands_sorted$order_prim[hand_identified] = 2
+hands[hand_identified] = NA
+
+# House
+hand_identified = hands %>% str_detect(house[1]) %>% unlist()
+hands_sorted$order_prim[hand_identified] = 3
+hands[hand_identified] = NA
+
+hand_identified = hands %>% str_detect(house[2]) %>% unlist()
+hands_sorted$order_prim[hand_identified] = 3
+hands[hand_identified] = NA
+
+hand_identified = hands %>% str_detect(two_pair[1]) %>% unlist() &
+  sapply(hands,nchar)==4
+hands_sorted$order_prim[hand_identified] = 3
+hands[hand_identified] = NA
+
+hand_identified = hands %>% str_detect(two_pair[2]) %>% unlist() &
+  sapply(hands,nchar)==4
+hands_sorted$order_prim[hand_identified] = 3
+hands[hand_identified] = NA
+
+
+# 3 of kind
+hand_identified = hands %>% str_detect(three) %>% unlist()
+hands_sorted$order_prim[hand_identified] = 4
+hands[hand_identified] = NA
+
+hand_identified = hands %>% str_detect(two) %>% unlist() & 
+  sapply(hands,nchar)==4
+hands_sorted$order_prim[hand_identified] = 4
+hands[hand_identified] = NA
+
+hand_identified = sapply(hands,nchar)==3
+hands_sorted$order_prim[hand_identified] = 4
+hands[hand_identified] = NA
+
+# 2 pairs
+hand_identified = hands %>% str_detect(two_pair[1]) %>% unlist()
+hands_sorted$order_prim[hand_identified] = 5
+hands[hand_identified] = NA
+hand_identified = hands %>% str_detect(two_pair[2]) %>% unlist()
+hands_sorted$order_prim[hand_identified] = 5
+hands[hand_identified] = NA
+
+
+# 2 of kind
+hand_identified = hands %>% str_detect(two) %>% unlist()
+hands_sorted$order_prim[hand_identified] = 6
+hands[hand_identified] = NA
+
+hand_identified = sapply(hands,nchar)==4
+hands_sorted$order_prim[hand_identified] = 6
+hands[hand_identified] = NA
+
+
+
+result = hands_sorted %>% 
+  mutate(Card1 = 
+           case_when(
+             substring(text = hands_org,first = 1,last = 1)=="A" ~ 14,
+             substring(text = hands_org,first = 1,last = 1)=="K" ~ 13,
+             substring(text = hands_org,first = 1,last = 1)=="Q" ~ 12,
+             substring(text = hands_org,first = 1,last = 1)=="J" ~ 1,
+             substring(text = hands_org,first = 1,last = 1)=="T" ~ 10,
+             TRUE ~ substring(text = hands_org,first = 1,last = 1) %>% as.numeric(),
+           ),
+         Card2 = 
+           case_when(
+             substring(text = hands_org,first = 2,last = 2)=="A" ~ 14,
+             substring(text = hands_org,first = 2,last = 2)=="K" ~ 13,
+             substring(text = hands_org,first = 2,last = 2)=="Q" ~ 12,
+             substring(text = hands_org,first = 2,last = 2)=="J" ~ 1,
+             substring(text = hands_org,first = 2,last = 2)=="T" ~ 10,
+             TRUE ~ substring(text = hands_org,first = 2,last = 2)%>% as.numeric()
+           ),
+         Card3 = 
+           case_when(
+             substring(text = hands_org,first = 3,last = 3)=="A" ~ 14,
+             substring(text = hands_org,first = 3,last = 3)=="K" ~ 13,
+             substring(text = hands_org,first = 3,last = 3)=="Q" ~ 12,
+             substring(text = hands_org,first = 3,last = 3)=="J" ~ 1,
+             substring(text = hands_org,first = 3,last = 3)=="T" ~ 10,
+             TRUE ~ substring(text = hands_org,first = 3,last = 3)%>% as.numeric()
+           ),
+         Card4 = 
+           case_when(
+             substring(text = hands_org,first = 4,last = 4)=="A" ~ 14,
+             substring(text = hands_org,first = 4,last = 4)=="K" ~ 13,
+             substring(text = hands_org,first = 4,last = 4)=="Q" ~ 12,
+             substring(text = hands_org,first = 4,last = 4)=="J" ~ 1,
+             substring(text = hands_org,first = 4,last = 4)=="T" ~ 10,
+             TRUE ~ substring(text = hands_org,first = 4,last = 4)%>% as.numeric()
+           ),
+         Card5 = 
+           case_when(
+             substring(text = hands_org,first = 5,last = 5)=="A" ~ 14,
+             substring(text = hands_org,first = 5,last = 5)=="K" ~ 13,
+             substring(text = hands_org,first = 5,last = 5)=="Q" ~ 12,
+             substring(text = hands_org,first = 5,last = 5)=="J" ~ 1,
+             substring(text = hands_org,first = 5,last = 5)=="T" ~ 10,
+             TRUE ~ substring(text = hands_org,first = 5,last = 5)%>% as.numeric()
+           ),
+         value = -(Card1*(15^4) + Card2*(15^3) + Card3*(15^2) + Card4*(15^1) + Card5)
+  ) %>% 
+  arrange(order_prim,-Card1,-Card2,-Card3,-Card4,-Card5) %>%
+  mutate(rank = seq(n(),1,by=-1),
+         payoff = bets * rank) %>% 
+  pull(payoff) %>% 
+  sum()
